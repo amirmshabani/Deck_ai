@@ -1,347 +1,455 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Chat Bot</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Deck // AI Console</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<style>
+  :root{
+    --bg: #0E1116;
+    --panel: #161B22;
+    --panel-2: #1C2330;
+    --line: #2A3240;
+    --text: #E7EAEE;
+    --muted: #8B96A6;
+    --amber: #E8A33D;
+    --amber-dim: #8A6526;
+    --teal: #4FD1C5;
+    --red: #E56B6B;
+    --radius: 14px;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:
+      radial-gradient(1200px 600px at 15% -10%, rgba(232,163,61,0.07), transparent 60%),
+      radial-gradient(900px 500px at 100% 0%, rgba(79,209,197,0.06), transparent 55%),
+      var(--bg);
+    color:var(--text);
+    font-family:'IBM Plex Sans', system-ui, sans-serif;
+    min-height:100vh;
+  }
+  .mono{ font-family:'JetBrains Mono', monospace; }
+  .display{ font-family:'Space Grotesk', system-ui, sans-serif; }
 
-        body {
-            font-family: 'Inter', system-ui, sans-serif;
-        }
+  /* ---- Header / Deck bar ---- */
+  header{
+    position:fixed; top:0; left:0; right:0; z-index:50;
+    background:rgba(14,17,22,0.85);
+    backdrop-filter: blur(14px);
+    border-bottom:1px solid var(--line);
+  }
+  .deck-bar{
+    max-width:920px; margin:0 auto; padding:14px 20px;
+    display:flex; align-items:center; justify-content:space-between; gap:12px;
+  }
+  .brand{ display:flex; align-items:center; gap:12px; }
+  .brand-mark{
+    width:38px; height:38px; border-radius:10px;
+    background:linear-gradient(155deg, var(--amber) 0%, #C97F1F 100%);
+    display:flex; align-items:center; justify-content:center;
+    box-shadow:0 0 0 1px rgba(232,163,61,0.25), 0 8px 18px -6px rgba(232,163,61,0.35);
+  }
+  .brand-mark i{ color:#161006; font-size:16px; }
+  .brand-name{ font-weight:600; font-size:17px; letter-spacing:0.2px; }
+  .status-row{ display:flex; align-items:center; gap:6px; font-size:11px; color:var(--muted); }
+  .status-dot{ width:6px; height:6px; border-radius:50%; background:var(--teal); box-shadow:0 0 8px var(--teal); animation:pulse 2s infinite; }
+  @keyframes pulse{ 0%,100%{opacity:1;} 50%{opacity:.35;} }
 
-        .chat-container {
-            height: calc(100vh - 140px);
-        }
+  .deck-actions{ display:flex; gap:8px; }
+  .deck-btn{
+    display:flex; align-items:center; gap:8px;
+    background:var(--panel); border:1px solid var(--line);
+    color:var(--text); padding:9px 14px; border-radius:10px;
+    font-size:12.5px; cursor:pointer; transition:all .15s ease;
+  }
+  .deck-btn:hover{ border-color:var(--amber-dim); background:var(--panel-2); }
+  .deck-btn .val{ color:var(--amber); font-family:'JetBrains Mono',monospace; font-size:11.5px; }
 
-        .message-enter {
-            animation: messageEnter 0.3s ease-out;
-        }
+  /* ---- Chat area ---- */
+  main{ padding:96px 16px 120px; }
+  .chat-wrap{ max-width:760px; margin:0 auto; display:flex; flex-direction:column; gap:18px; }
 
-        @keyframes messageEnter {
-            from {
-                opacity: 0;
-                transform: translateY(20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
+  .row{ display:flex; gap:12px; align-items:flex-start; }
+  .row.user{ flex-direction:row-reverse; }
 
-        .typing-indicator span {
-            animation: typing 1.4s infinite both;
-        }
+  .avatar{
+    width:32px; height:32px; border-radius:8px; flex-shrink:0;
+    display:flex; align-items:center; justify-content:center; font-size:13px;
+    margin-top:2px;
+  }
+  .avatar.bot{ background:linear-gradient(155deg, var(--amber), #C97F1F); color:#161006; }
+  .avatar.user{ background:var(--panel-2); border:1px solid var(--line); color:var(--teal); }
 
-        .typing-indicator span:nth-child(2) {
-            animation-delay: 0.2s;
-        }
+  .bubble{
+    max-width:74%; padding:13px 16px; border-radius:var(--radius);
+    line-height:1.55; font-size:14.5px; position:relative;
+  }
+  .bubble.bot{
+    background:var(--panel); border:1px solid var(--line); border-top-left-radius:4px;
+  }
+  .bubble.user{
+    background:linear-gradient(155deg, #23303C, #1A232C);
+    border:1px solid #2E3B48; border-top-right-radius:4px;
+  }
+  .meta{
+    font-family:'JetBrains Mono',monospace; font-size:10px; color:var(--muted);
+    margin-top:6px; display:flex; gap:8px; align-items:center;
+  }
+  .row.user .meta{ justify-content:flex-end; }
 
-        .typing-indicator span:nth-child(3) {
-            animation-delay: 0.4s;
-        }
+  .think-toggle{
+    display:inline-flex; align-items:center; gap:6px; font-size:11px;
+    color:var(--teal); cursor:pointer; margin-top:6px; font-family:'JetBrains Mono',monospace;
+    background:rgba(79,209,197,0.08); border:1px solid rgba(79,209,197,0.25);
+    padding:5px 10px; border-radius:8px; width:fit-content;
+  }
+  .think-body{
+    display:none; margin-top:8px; padding:10px 12px; border-radius:10px;
+    background:rgba(79,209,197,0.05); border:1px solid rgba(79,209,197,0.18);
+    font-size:12.5px; color:#B8C2CC; line-height:1.5;
+  }
+  .think-body.open{ display:block; }
 
-        @keyframes typing {
-            0%, 60%, 100% {
-                transform: translateY(0);
-            }
-            30% {
-                transform: translateY(-10px);
-            }
-        }
+  .typing{ display:flex; gap:4px; padding:4px 2px; }
+  .typing span{ width:6px; height:6px; border-radius:50%; background:var(--muted); animation:bob 1.2s infinite ease-in-out; }
+  .typing span:nth-child(2){ animation-delay:.15s; }
+  .typing span:nth-child(3){ animation-delay:.3s; }
+  @keyframes bob{ 0%,60%,100%{ transform:translateY(0); opacity:.4;} 30%{ transform:translateY(-5px); opacity:1;} }
 
-        .scrollbar-thin::-webkit-scrollbar {
-            width: 6px;
-        }
+  /* ---- Composer ---- */
+  footer{
+    position:fixed; bottom:0; left:0; right:0; z-index:40;
+    background:linear-gradient(0deg, var(--bg) 55%, rgba(14,17,22,0));
+    padding-top:24px;
+  }
+  .composer{ max-width:760px; margin:0 auto; padding:0 16px 18px; }
+  .composer-inner{
+    display:flex; align-items:center; gap:10px;
+    background:var(--panel); border:1px solid var(--line); border-radius:16px;
+    padding:8px 8px 8px 16px;
+  }
+  .composer-inner:focus-within{ border-color:var(--amber-dim); box-shadow:0 0 0 3px rgba(232,163,61,0.12); }
+  .prompt-caret{ color:var(--amber); font-family:'JetBrains Mono',monospace; font-size:14px; }
+  #userInput{
+    flex:1; background:transparent; border:none; outline:none;
+    color:var(--text); font-size:14.5px; font-family:'IBM Plex Sans',sans-serif;
+    padding:10px 0;
+  }
+  #userInput::placeholder{ color:var(--muted); }
+  #sendBtn{
+    width:40px; height:40px; border-radius:10px; border:none; cursor:pointer;
+    background:linear-gradient(155deg, var(--amber), #C97F1F); color:#161006;
+    display:flex; align-items:center; justify-content:center; font-size:14px;
+    transition:transform .15s ease;
+  }
+  #sendBtn:active{ transform:scale(0.92); }
+  #sendBtn:disabled{ opacity:.4; cursor:not-allowed; }
 
-        .scrollbar-thin::-webkit-scrollbar-track {
-            background: transparent;
-        }
+  /* ---- Modal ---- */
+  .modal-overlay{
+    position:fixed; inset:0; background:rgba(6,8,11,0.7); backdrop-filter:blur(4px);
+    z-index:100; display:none; align-items:center; justify-content:center; padding:16px;
+  }
+  .modal-overlay.open{ display:flex; }
+  .modal{
+    width:100%; max-width:440px; background:var(--panel); border:1px solid var(--line);
+    border-radius:16px; padding:22px; box-shadow:0 30px 60px -20px rgba(0,0,0,0.6);
+  }
+  .modal-head{ display:flex; align-items:center; justify-content:between; gap:10px; margin-bottom:4px; }
+  .modal-title{ font-family:'Space Grotesk',sans-serif; font-size:16px; font-weight:600; display:flex; align-items:center; gap:8px; }
+  .modal-title i{ color:var(--amber); }
+  .modal-sub{ color:var(--muted); font-size:12.5px; margin:6px 0 18px; line-height:1.5; }
 
-        .scrollbar-thin::-webkit-scrollbar-thumb {
-            background: #6366f1;
-            border-radius: 3px;
-        }
-    </style>
+  .field-label{ font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:0.06em; margin-bottom:6px; display:block; }
+  .field-input{
+    width:100%; background:var(--panel-2); border:1px solid var(--line); border-radius:10px;
+    padding:11px 12px; color:var(--text); font-size:13.5px; outline:none; font-family:'JetBrains Mono',monospace;
+    margin-bottom:16px;
+  }
+  .field-input:focus{ border-color:var(--amber-dim); }
+
+  .model-option{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:10px 12px; border:1px solid var(--line); border-radius:10px;
+    margin-bottom:8px; cursor:pointer; transition:all .12s ease;
+  }
+  .model-option:hover{ border-color:var(--amber-dim); }
+  .model-option.active{ border-color:var(--amber); background:rgba(232,163,61,0.06); }
+  .model-option .name{ font-size:13px; font-weight:500; }
+  .model-option .id{ font-family:'JetBrains Mono',monospace; font-size:10.5px; color:var(--muted); }
+  .model-option .check{ color:var(--amber); opacity:0; font-size:13px; }
+  .model-option.active .check{ opacity:1; }
+
+  .custom-model-row{ display:flex; gap:8px; margin-top:2px; }
+  .custom-model-row input{ flex:1; }
+
+  .modal-actions{ display:flex; justify-content:flex-end; gap:10px; margin-top:18px; }
+  .btn-ghost{ background:transparent; border:none; color:var(--muted); padding:10px 14px; border-radius:9px; cursor:pointer; font-size:13px; }
+  .btn-ghost:hover{ color:var(--text); }
+  .btn-primary{
+    background:linear-gradient(155deg, var(--amber), #C97F1F); color:#161006; border:none;
+    padding:10px 18px; border-radius:9px; cursor:pointer; font-size:13px; font-weight:600;
+  }
+
+  ::-webkit-scrollbar{ width:6px; }
+  ::-webkit-scrollbar-thumb{ background:var(--line); border-radius:3px; }
+</style>
 </head>
-<body class="bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 min-h-screen">
-    <!-- Header -->
-    <header class="fixed top-0 left-0 right-0 bg-black/40 backdrop-blur-xl border-b border-white/10 z-50">
-        <div class="max-w-5xl mx-auto px-6 py-4 flex items-center justify-between">
-            <div class="flex items-center gap-3">
-                <div class="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center">
-                    <i class="fas fa-robot text-white text-lg"></i>
-                </div>
-                <div>
-                    <h1 class="text-xl font-bold text-white">AI Assistant</h1>
-                    <p class="text-xs text-green-400 flex items-center gap-1">
-                        <span class="w-2 h-2 bg-green-400 rounded-full animate-pulse"></span>
-                        Online
-                    </p>
-                </div>
-            </div>
-            <div class="flex items-center gap-2">
-                <button onclick="openSettings()" class="px-4 py-2 bg-white/10 hover:bg-white/20 rounded-lg text-sm transition-all">
-                    <i class="fas fa-key mr-2"></i>API Key
-                </button>
-                <button onclick="clearChat()" class="px-4 py-2 bg-white/10 hover:bg-white/20 rounded-lg text-sm transition-all">
-                    <i class="fas fa-trash mr-2"></i>Clear Chat
-                </button>
-            </div>
-        </div>
-    </header>
+<body>
 
-    <!-- Settings Modal -->
-    <div id="settingsModal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[100] hidden flex items-center justify-center px-4">
-        <div class="bg-slate-800 border border-white/10 rounded-2xl p-6 max-w-md w-full">
-            <h2 class="text-white font-semibold text-lg mb-2"><i class="fas fa-key mr-2"></i>OpenRouter API Key</h2>
-            <p class="text-white/60 text-sm mb-4">
-                Your key is kept only in this browser tab's memory. It is never written into the page's source code
-                and is cleared when you close or reload the tab.
-            </p>
-            <input
-                type="password"
-                id="apiKeyInput"
-                placeholder="sk-or-v1-..."
-                autocomplete="off"
-                class="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3 text-white placeholder-white/40 focus:outline-none focus:border-indigo-500 mb-4"
-            >
-            <div class="flex gap-3 justify-end">
-                <button onclick="closeSettings()" class="px-4 py-2 rounded-lg text-white/70 hover:text-white transition-all">Cancel</button>
-                <button onclick="saveApiKey()" class="px-4 py-2 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-lg text-white font-medium transition-all">Save</button>
-            </div>
-        </div>
+<header>
+  <div class="deck-bar">
+    <div class="brand">
+      <div class="brand-mark"><i class="fa-solid fa-satellite-dish"></i></div>
+      <div>
+        <div class="brand-name display">Deck</div>
+        <div class="status-row"><span class="status-dot"></span><span id="statusText">link established</span></div>
+      </div>
+    </div>
+    <div class="deck-actions">
+      <button class="deck-btn" onclick="openSettings('model')">
+        <i class="fa-solid fa-microchip"></i>
+        <span class="val" id="modelBtnLabel">gpt-4o-mini</span>
+      </button>
+      <button class="deck-btn" onclick="openSettings('key')">
+        <i class="fa-solid fa-key"></i>
+      </button>
+      <button class="deck-btn" onclick="clearChat()">
+        <i class="fa-solid fa-rotate-left"></i>
+      </button>
+    </div>
+  </div>
+</header>
+
+<main>
+  <div class="chat-wrap" id="chatBox">
+    <div class="row">
+      <div class="avatar bot"><i class="fa-solid fa-satellite-dish"></i></div>
+      <div>
+        <div class="bubble bot">Console online. Set your OpenRouter key and pick a model from the panel up top, then send a message.</div>
+        <div class="meta"><span>DECK</span><span id="welcomeTime"></span></div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<footer>
+  <div class="composer">
+    <form id="chatForm" class="composer-inner">
+      <span class="prompt-caret">›</span>
+      <input type="text" id="userInput" placeholder="Message the console…" autocomplete="off">
+      <button type="submit" id="sendBtn"><i class="fa-solid fa-arrow-up"></i></button>
+    </form>
+  </div>
+</footer>
+
+<!-- Settings Modal -->
+<div class="modal-overlay" id="modalOverlay">
+  <div class="modal">
+    <div class="modal-head">
+      <div class="modal-title" id="modalTitle"><i class="fa-solid fa-microchip"></i> Model</div>
+    </div>
+    <div class="modal-sub" id="modalSub">Choose which model handles this console. Switch anytime — no code changes needed.</div>
+
+    <div id="modelPane">
+      <div id="modelList"></div>
+      <label class="field-label" style="margin-top:14px;">Or enter a custom OpenRouter model ID</label>
+      <div class="custom-model-row">
+        <input type="text" id="customModelInput" class="field-input" style="margin-bottom:0;" placeholder="e.g. anthropic/claude-3.5-sonnet">
+      </div>
     </div>
 
-    <!-- Chat Container -->
-    <main class="pt-20 pb-24 px-4">
-        <div class="max-w-5xl mx-auto">
-            <div id="chatBox" class="chat-container scrollbar-thin overflow-y-auto space-y-4">
-                <!-- Welcome Message -->
-                <div class="message-enter flex items-start gap-3">
-                    <div class="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center flex-shrink-0">
-                        <i class="fas fa-robot text-white"></i>
-                    </div>
-                    <div class="bg-white/10 backdrop-blur-sm rounded-2xl rounded-tl-none px-5 py-3 max-w-[80%]">
-                        <p class="text-white">Hello! 👋 I'm your AI assistant. Click "API Key" above to set your OpenRouter key, then start chatting.</p>
-                    </div>
-                </div>
-            </div>
+    <div id="keyPane" style="display:none;">
+      <label class="field-label">OpenRouter API key</label>
+      <input type="password" id="apiKeyInput" class="field-input" placeholder="sk-or-v1-…" autocomplete="off">
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn-ghost" onclick="closeSettings()">Cancel</button>
+      <button class="btn-primary" onclick="saveSettings()">Save</button>
+    </div>
+  </div>
+</div>
+
+<script>
+  const chatBox = document.getElementById('chatBox');
+  const chatForm = document.getElementById('chatForm');
+  const userInput = document.getElementById('userInput');
+  const sendBtn = document.getElementById('sendBtn');
+  const modalOverlay = document.getElementById('modalOverlay');
+  const modelPane = document.getElementById('modelPane');
+  const keyPane = document.getElementById('keyPane');
+  const modelList = document.getElementById('modelList');
+  const customModelInput = document.getElementById('customModelInput');
+  const apiKeyInput = document.getElementById('apiKeyInput');
+  const modalTitle = document.getElementById('modalTitle');
+  const modalSub = document.getElementById('modalSub');
+  const modelBtnLabel = document.getElementById('modelBtnLabel');
+
+  let messages = [];
+  let isLoading = false;
+  let apiKey = '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';
+
+  const MODELS = [
+    { id: 'openai/gpt-4o-mini', name: 'GPT-4o mini', tag: 'fast · cheap' },
+    { id: 'openai/gpt-4o', name: 'GPT-4o', tag: 'balanced' },
+    { id: 'anthropic/claude-3.5-sonnet', name: 'Claude 3.5 Sonnet', tag: 'strong reasoning' },
+    { id: 'google/gemini-2.0-flash-001', name: 'Gemini 2.0 Flash', tag: 'fast · long context' },
+    { id: 'meta-llama/llama-3.3-70b-instruct', name: 'Llama 3.3 70B', tag: 'open weights' }
+  ];
+  let currentModel = MODELS[0].id;
+
+  document.getElementById('welcomeTime').textContent = new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+
+  function renderModelList() {
+    modelList.innerHTML = MODELS.map(m => `
+      <div class="model-option ${m.id === currentModel ? 'active' : ''}" data-id="${m.id}">
+        <div>
+          <div class="name">${m.name}</div>
+          <div class="id">${m.id} · ${m.tag}</div>
         </div>
-    </main>
+        <i class="fa-solid fa-check check"></i>
+      </div>
+    `).join('');
+    modelList.querySelectorAll('.model-option').forEach(el => {
+      el.addEventListener('click', () => {
+        currentModel = el.dataset.id;
+        customModelInput.value = '';
+        renderModelList();
+      });
+    });
+  }
 
-    <!-- Input Area -->
-    <footer class="fixed bottom-0 left-0 right-0 bg-black/40 backdrop-blur-xl border-t border-white/10">
-        <div class="max-w-5xl mx-auto px-4 py-4">
-            <form id="chatForm" class="flex gap-3">
-                <div class="flex-1 relative">
-                    <input
-                        type="text"
-                        id="userInput"
-                        placeholder="Type your message..."
-                        autocomplete="off"
-                        class="w-full bg-white/10 border border-white/20 rounded-2xl px-5 py-4 pr-12 text-white placeholder-white/50 focus:outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/30 transition-all"
-                    >
-                    <button type="button" onclick="document.getElementById('userInput').value=''" class="absolute right-4 top-1/2 -translate-y-1/2 text-white/50 hover:text-white">
-                        <i class="fas fa-times"></i>
-                    </button>
-                </div>
-                <button
-                    type="submit"
-                    id="sendBtn"
-                    class="px-6 py-4 bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 rounded-2xl text-white font-medium transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                    <i class="fas fa-paper-plane"></i>
-                </button>
-            </form>
+  function openSettings(which) {
+    if (which === 'model') {
+      modalTitle.innerHTML = '<i class="fa-solid fa-microchip"></i> Model';
+      modalSub.textContent = 'Choose which model handles this console. Switch anytime — no code changes needed.';
+      modelPane.style.display = 'block';
+      keyPane.style.display = 'none';
+      renderModelList();
+    } else {
+      modalTitle.innerHTML = '<i class="fa-solid fa-key"></i> API key';
+      modalSub.textContent = "Kept only in this browser tab's memory for the session.";
+      modelPane.style.display = 'none';
+      keyPane.style.display = 'block';
+      apiKeyInput.value = apiKey;
+    }
+    modalOverlay.classList.add('open');
+  }
+
+  function closeSettings() { modalOverlay.classList.remove('open'); }
+
+  function saveSettings() {
+    if (keyPane.style.display !== 'none') {
+      apiKey = apiKeyInput.value.trim();
+    } else {
+      const custom = customModelInput.value.trim();
+      if (custom) currentModel = custom;
+      modelBtnLabel.textContent = currentModel.split('/').pop();
+    }
+    closeSettings();
+  }
+
+  modalOverlay.addEventListener('click', (e) => { if (e.target === modalOverlay) closeSettings(); });
+
+  function scrollToBottom() { window.scrollTo(0, document.body.scrollHeight); }
+  function escapeHtml(t) { const d = document.createElement('div'); d.textContent = t; return d.innerHTML; }
+  function formatContent(t) { return escapeHtml(t).replace(/\n/g, '<br>'); }
+  function timeNow() { return new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}); }
+
+  function addMessage(content, isUser = false, reasoning = null) {
+    const row = document.createElement('div');
+    row.className = `row ${isUser ? 'user' : ''}`;
+    const thinkId = 'think-' + Math.random().toString(36).slice(2, 8);
+    row.innerHTML = `
+      <div class="avatar ${isUser ? 'user' : 'bot'}"><i class="fa-solid ${isUser ? 'fa-user' : 'fa-satellite-dish'}"></i></div>
+      <div>
+        <div class="bubble ${isUser ? 'user' : 'bot'}">${formatContent(content)}</div>
+        ${reasoning ? `
+          <div class="think-toggle" onclick="document.getElementById('${thinkId}').classList.toggle('open')">
+            <i class="fa-solid fa-lightbulb"></i> view reasoning
+          </div>
+          <div class="think-body" id="${thinkId}">${formatContent(reasoning)}</div>
+        ` : ''}
+        <div class="meta"><span>${isUser ? 'YOU' : currentModel.split('/').pop().toUpperCase()}</span><span>${timeNow()}</span></div>
+      </div>
+    `;
+    chatBox.appendChild(row);
+    scrollToBottom();
+  }
+
+  function showTyping() {
+    const row = document.createElement('div');
+    row.className = 'row'; row.id = 'typingRow';
+    row.innerHTML = `
+      <div class="avatar bot"><i class="fa-solid fa-satellite-dish"></i></div>
+      <div class="bubble bot"><div class="typing"><span></span><span></span><span></span></div></div>
+    `;
+    chatBox.appendChild(row);
+    scrollToBottom();
+  }
+  function removeTyping() { const el = document.getElementById('typingRow'); if (el) el.remove(); }
+
+  async function sendMessage(e) {
+    e.preventDefault();
+    const message = userInput.value.trim();
+    if (!message || isLoading) return;
+
+    isLoading = true; sendBtn.disabled = true;
+    addMessage(message, true);
+    messages.push({ role: 'user', content: message });
+    userInput.value = '';
+    showTyping();
+    document.getElementById('statusText').textContent = 'transmitting…';
+
+    try {
+      const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer ' + apiKey
+        },
+        body: JSON.stringify({ model: currentModel, messages })
+      });
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      const data = await response.json();
+      removeTyping();
+      const reply = data.choices[0].message.content;
+      const reasoning = data.choices[0].message.reasoning || null;
+      messages.push({ role: 'assistant', content: reply });
+      addMessage(reply, false, reasoning);
+      document.getElementById('statusText').textContent = 'link established';
+    } catch (err) {
+      removeTyping();
+      addMessage(`Error: ${err.message}. Check your API key and model selection in the panels above.`);
+      document.getElementById('statusText').textContent = 'signal lost';
+      console.error(err);
+    } finally {
+      isLoading = false; sendBtn.disabled = false; userInput.focus();
+    }
+  }
+
+  function clearChat() {
+    messages = [];
+    chatBox.innerHTML = `
+      <div class="row">
+        <div class="avatar bot"><i class="fa-solid fa-satellite-dish"></i></div>
+        <div>
+          <div class="bubble bot">Console cleared. Ready when you are.</div>
+          <div class="meta"><span>DECK</span><span>${timeNow()}</span></div>
         </div>
-    </footer>
+      </div>
+    `;
+  }
 
-    <script>
-        const chatBox = document.getElementById('chatBox');
-        const chatForm = document.getElementById('chatForm');
-        const userInput = document.getElementById('userInput');
-        const sendBtn = document.getElementById('sendBtn');
-        const settingsModal = document.getElementById('settingsModal');
-        const apiKeyInput = document.getElementById('apiKeyInput');
-
-        let messages = [];
-        let isLoading = false;
-        let apiKey = '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';
-
-        function openSettings() {
-            apiKeyInput.value = apiKey;
-            settingsModal.classList.remove('hidden');
-            settingsModal.classList.add('flex');
-            apiKeyInput.focus();
-        }
-
-        function closeSettings() {
-            settingsModal.classList.add('hidden');
-            settingsModal.classList.remove('flex');
-        }
-
-        function saveApiKey() {
-            apiKey = apiKeyInput.value.trim();
-            closeSettings();
-        }
-
-        function scrollToBottom() {
-            chatBox.scrollTop = chatBox.scrollHeight;
-        }
-
-        function escapeHtml(text) {
-            const div = document.createElement('div');
-            div.textContent = text;
-            return div.innerHTML;
-        }
-
-        function formatContent(text) {
-            return escapeHtml(text).replace(/\n/g, '<br>');
-        }
-
-        function addMessage(content, isUser = false, isReasoning = false) {
-            const div = document.createElement('div');
-            div.className = `message-enter flex items-start gap-3 ${isUser ? 'flex-row-reverse' : ''}`;
-
-            if (isUser) {
-                div.innerHTML = `
-                    <div class="w-10 h-10 bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl flex items-center justify-center flex-shrink-0">
-                        <i class="fas fa-user text-white"></i>
-                    </div>
-                    <div class="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-2xl rounded-tr-none px-5 py-3 max-w-[80%]">
-                        <p class="text-white">${escapeHtml(content)}</p>
-                    </div>
-                `;
-            } else if (isReasoning) {
-                div.innerHTML = `
-                    <div class="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center flex-shrink-0">
-                        <i class="fas fa-robot text-white"></i>
-                    </div>
-                    <div class="bg-amber-500/20 backdrop-blur-sm border border-amber-500/30 rounded-2xl rounded-tl-none px-5 py-3 max-w-[80%]">
-                        <p class="text-amber-200 text-sm"><i class="fas fa-lightbulb mr-2"></i>${escapeHtml(content)}</p>
-                    </div>
-                `;
-            } else {
-                div.innerHTML = `
-                    <div class="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center flex-shrink-0">
-                        <i class="fas fa-robot text-white"></i>
-                    </div>
-                    <div class="bg-white/10 backdrop-blur-sm rounded-2xl rounded-tl-none px-5 py-3 max-w-[80%]">
-                        <p class="text-white whitespace-pre-wrap">${formatContent(content)}</p>
-                    </div>
-                `;
-            }
-
-            chatBox.appendChild(div);
-            scrollToBottom();
-        }
-
-        function showTypingIndicator() {
-            const div = document.createElement('div');
-            div.id = 'typingIndicator';
-            div.className = 'message-enter flex items-start gap-3';
-            div.innerHTML = `
-                <div class="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center flex-shrink-0">
-                    <i class="fas fa-robot text-white"></i>
-                </div>
-                <div class="bg-white/10 backdrop-blur-sm rounded-2xl rounded-tl-none px-5 py-4">
-                    <div class="typing-indicator flex gap-1">
-                        <span class="w-2 h-2 bg-white/60 rounded-full"></span>
-                        <span class="w-2 h-2 bg-white/60 rounded-full"></span>
-                        <span class="w-2 h-2 bg-white/60 rounded-full"></span>
-                    </div>
-                </div>
-            `;
-            chatBox.appendChild(div);
-            scrollToBottom();
-        }
-
-        function removeTypingIndicator() {
-            const indicator = document.getElementById('typingIndicator');
-            if (indicator) indicator.remove();
-        }
-
-        async function sendMessage(e) {
-            e.preventDefault();
-
-            const message = userInput.value.trim();
-            if (!message || isLoading) return;
-
-            isLoading = true;
-            sendBtn.disabled = true;
-
-            // Add user message
-            addMessage(message, true);
-            messages.push({ role: 'user', content: message });
-            userInput.value = '';
-
-            showTypingIndicator();
-
-            try {
-                const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': 'Bearer ' + apiKey
-                    },
-                    body: JSON.stringify({
-                        model: 'openai/gpt-4o-mini',
-                        messages: messages
-                    })
-                });
-
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-
-                const data = await response.json();
-                removeTypingIndicator();
-
-                const assistantMessage = data.choices[0].message.content;
-                messages.push({ role: 'assistant', content: assistantMessage });
-                addMessage(assistantMessage);
-
-                // Show reasoning if available
-                if (data.choices[0].message.reasoning) {
-                    addMessage(data.choices[0].message.reasoning, false, true);
-                }
-
-            } catch (error) {
-                removeTypingIndicator();
-                addMessage(`Error: ${error.message}. Check that your API key is valid.`);
-                console.error('Error:', error);
-            } finally {
-                isLoading = false;
-                sendBtn.disabled = false;
-                userInput.focus();
-            }
-        }
-
-        function clearChat() {
-            messages = [];
-            chatBox.innerHTML = `
-                <div class="message-enter flex items-start gap-3">
-                    <div class="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center flex-shrink-0">
-                        <i class="fas fa-robot text-white"></i>
-                    </div>
-                    <div class="bg-white/10 backdrop-blur-sm rounded-2xl rounded-tl-none px-5 py-3 max-w-[80%]">
-                        <p class="text-white">Chat cleared! How can I help you? 🤖</p>
-                    </div>
-                </div>
-            `;
-        }
-
-        chatForm.addEventListener('submit', sendMessage);
-        userInput.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                sendMessage(e);
-            }
-        });
-    </script>
+  chatForm.addEventListener('submit', sendMessage);
+  userInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(e); }
+  });
+</script>
 </body>
 </html>
